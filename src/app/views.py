@@ -6,8 +6,12 @@ from rest_framework import status
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
 from .models import Field, Booking
-from .serializers import FieldSerializer, BookingSerializer
+from .serializers import FieldSerializer, BookingSerializer, CreateFieldSerializer
 from django.utils.timezone import now
+from django_filters.rest_framework import DjangoFilterBackend, OrderingFilter
+from django.contrib.gis.geos import Point
+from .permissions import FieldOwnerPermission, CustomUserPermission
+from .pagination import CustomPagination
 
 
 def get_tokens_for_user(user):
@@ -56,8 +60,7 @@ class BookFieldView(ListCreateAPIView):
     permission_classes = [IsAuthenticated]
 
     def create(self, request, *args, **kwargs):
-        field_id = request.data.get("field_id")
-        date = request.data.get("date")
+        field_id = request.data.get("field")
         start_time = request.data.get("start_time")
         end_time = request.data.get("end_time")
 
@@ -66,14 +69,13 @@ class BookFieldView(ListCreateAPIView):
         except Field.DoesNotExist:
             return Response({"error": "Field not found"}, status=status.HTTP_404_NOT_FOUND)
 
-        if Booking.objects.filter(field=field, date=date, start_time=start_time).exists():
+        if Booking.objects.filter(field=field, start_time=start_time).exists():
             return Response({"error": "This field is already booked for the selected time"},
                             status=status.HTTP_400_BAD_REQUEST)
 
         booking = Booking.objects.create(
             user=request.user,
             field=field,
-            date=date,
             start_time=start_time,
             end_time=end_time
         )
@@ -87,16 +89,16 @@ class BookFieldView(ListCreateAPIView):
 class AvailableFieldsView(ListAPIView):
     queryset = Field.objects.all()
     serializer_class = FieldSerializer
+    filter_backends = [DjangoFilterBackend, ]
+    filterset_fields = ['address', 'price_per_hour']
 
-    def get_queryset(self):
-        date = self.request.query_params.get("date")
-        start_time = self.request.query_params.get("start_time")
-        end_time = self.request.query_params.get("end_time")
-        return Field.objects.exclude(
-            booking__date=date,
-            booking__start_time__lt=end_time,
-            booking__end_time__gt=start_time
-        )
+    # def get_queryset(self):
+    #     start_time = self.request.query_params.get("start_time")
+    #     end_time = self.request.query_params.get("end_time")
+    #     return Field.objects.exclude(
+    #         booking__start_time__lt=end_time,
+    #         booking__end_time__gt=start_time
+    #     )
 
 
 class MyBookingsView(ListAPIView):
@@ -118,3 +120,15 @@ class CancelBookingView(DestroyAPIView):
             return Response({"error": "Past bookings cannot be canceled"}, status=status.HTTP_400_BAD_REQUEST)
         booking.delete()
         return Response({"message": "Booking canceled successfully"}, status=status.HTTP_200_OK)
+
+
+class CreateFieldView(ListCreateAPIView):
+    queryset = Field.objects.all()
+    serializer_class = FieldSerializer
+    permission_classes = [IsAuthenticated, FieldOwnerPermission]
+    pagination_class = CustomPagination
+
+    def get_serializer_class(self):
+        if self.request.method == "POST":
+            return CreateFieldSerializer
+        return FieldSerializer

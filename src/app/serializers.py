@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import Field, Booking, FieldOwner, User
+from django.contrib.gis.geos import Point
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -14,18 +15,6 @@ class FieldOwnerSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-# class FieldSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = Field
-#         fields = '__all__'
-
-
-# class BookingSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = Booking
-#         fields = '__all__'
-
-
 class FieldSerializer(serializers.ModelSerializer):
     class Meta:
         model = Field
@@ -33,8 +22,25 @@ class FieldSerializer(serializers.ModelSerializer):
 
 
 class BookingSerializer(serializers.ModelSerializer):
-    field_name = serializers.CharField(source="field.name", read_only=True)
+    # field_name = serializers.CharField(source="field.name", read_only=True)
 
     class Meta:
         model = Booking
-        fields = ["id", "field_name", "date", "start_time", "end_time"]
+        fields = ["id", "field", "start_time", "end_time"]
+
+
+class CreateFieldSerializer(serializers.ModelSerializer):
+    longitude = serializers.FloatField(write_only=True)
+    latitude = serializers.FloatField(write_only=True)
+
+    class Meta:
+        model = Field
+        fields = ("name", "address", "contact", "price_per_hour", "image", "longitude", "latitude")
+
+    def create(self, validated_data):
+        longitude = validated_data.pop("longitude")
+        latitude = validated_data.pop("latitude")
+        location = Point(longitude, latitude)
+        validated_data["location"] = location
+        validated_data["owner"] = self.context["request"].user
+        return super().create(validated_data)
