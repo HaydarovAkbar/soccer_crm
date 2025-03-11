@@ -1,0 +1,8 @@
+django
+psycopg2-binary
+djangorestframework
+djangorestframework-gis
+django-cors-headers
+django-filter
+django-rest-auth
+python-decouple

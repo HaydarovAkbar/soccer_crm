@@ -1,0 +1,37 @@
+version: '3.9'
+
+services:
+  db:
+    image: postgres:16
+    container_name: postgres16
+    restart: always
+    environment:
+      POSTGRES_DB: football
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: uU1242eZw
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  web:
+    build: .
+    container_name: django_app
+    restart: always
+    depends_on:
+      - db
+    environment:
+      - DATABASE_NAME=football
+      - DATABASE_USER=postgres
+      - DATABASE_PASSWORD=uU1242eZw
+      - DATABASE_HOST=64.226.104.135
+      - DATABASE_PORT=5432
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+    command: >
+      sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+
+volumes:
+  postgres_data:

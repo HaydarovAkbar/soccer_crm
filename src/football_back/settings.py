@@ -92,6 +92,7 @@ WSGI_APPLICATION = 'football_back.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.contrib.gis.db.backends.postgis',
+        # 'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'football',
         'USER': 'postgres',
         'PASSWORD': 'uU1242eZw',
