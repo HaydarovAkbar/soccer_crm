@@ -22,7 +22,6 @@ class FieldSerializer(serializers.ModelSerializer):
 
 
 class BookingSerializer(serializers.ModelSerializer):
-    # field_name = serializers.CharField(source="field.name", read_only=True)
 
     class Meta:
         model = Booking

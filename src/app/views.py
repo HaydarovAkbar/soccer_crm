@@ -15,6 +15,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from django.contrib.gis.geos import Point
 from .permissions import FieldOwnerPermission, CustomUserPermission
 from .pagination import CustomPagination
+from django.utils.timezone import now
 
 
 def get_tokens_for_user(user):
@@ -53,7 +54,7 @@ class LogOutView(APIView):
             token = RefreshToken(refresh_token)
             token.blacklist()
             return Response({"message": "Logged out successfully"}, status=status.HTTP_200_OK)
-        except Exception as e:
+        except Exception:
             return Response({"error": "Invalid token"}, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -165,12 +166,12 @@ class CancelBookingView(DestroyAPIView):
     lookup_field = 'id'
     lookup_url_kwarg = 'booking_id'
 
-    # def destroy(self, request, *args, **kwargs):
-    #     booking = self.get_object()
-    #     if booking.date < now().date():
-    #         return Response({"error": "Past bookings cannot be canceled"}, status=status.HTTP_400_BAD_REQUEST)
-    #     booking.delete()
-    #     return Response({"message": "Booking canceled successfully"}, status=status.HTTP_200_OK)
+    def destroy(self, request, *args, **kwargs):
+        booking = self.get_object()
+        if booking.end_time() > now().date():
+            return Response({"error": "Past bookings cannot be canceled"}, status=status.HTTP_400_BAD_REQUEST)
+        booking.delete()
+        return Response({"message": "Booking canceled successfully"}, status=status.HTTP_200_OK)
 
 
 class CreateFieldView(ListCreateAPIView):
