@@ -1,3 +1,8 @@
+from datetime import datetime
+from django.utils.dateparse import parse_datetime
+
+from django.contrib.gis.measure import D
+from django.contrib.gis.db.models.functions import Distance
 from rest_framework.views import APIView
 from rest_framework.generics import ListCreateAPIView, ListAPIView, DestroyAPIView
 from rest_framework.response import Response
@@ -12,6 +17,7 @@ from django_filters.rest_framework import DjangoFilterBackend, OrderingFilter
 from django.contrib.gis.geos import Point
 from .permissions import FieldOwnerPermission, CustomUserPermission
 from .pagination import CustomPagination
+from .filters import FieldFilter
 
 
 def get_tokens_for_user(user):
@@ -87,39 +93,62 @@ class BookFieldView(ListCreateAPIView):
 
 
 class AvailableFieldsView(ListAPIView):
-    queryset = Field.objects.all()
     serializer_class = FieldSerializer
-    filter_backends = [DjangoFilterBackend, ]
-    filterset_fields = ['address', 'price_per_hour']
+    filter_backends = [DjangoFilterBackend]
+    pagination_class = CustomPagination
 
-    # def get_queryset(self):
-    #     start_time = self.request.query_params.get("start_time")
-    #     end_time = self.request.query_params.get("end_time")
-    #     return Field.objects.exclude(
-    #         booking__start_time__lt=end_time,
-    #         booking__end_time__gt=start_time
-    #     )
+    def get_queryset(self):
+        queryset = Field.objects.all()
+
+        start_date = self.request.query_params.get("start_date")
+        end_date = self.request.query_params.get("end_date")
+        if start_date and end_date:
+            start_date = parse_datetime(start_date)
+            end_date = parse_datetime(end_date)
+            booked_fields = Booking.objects.filter(
+                start_time__lt=end_date,
+                end_time__gt=start_date
+            ).values_list("field_id", flat=True)
+            queryset = queryset.exclude(id__in=booked_fields)
+
+        longitude = self.request.query_params.get("longitude")
+        latitude = self.request.query_params.get("latitude")
+        if longitude and latitude:
+            try:
+                user_location = Point(float(longitude), float(latitude), srid=4326)
+                radius_km = 2
+
+                queryset = (
+                    queryset.annotate(distance=Distance("location", user_location))
+                    .filter(distance__lte=D(km=radius_km))
+                    .order_by("distance")
+                )
+
+            except (ValueError, TypeError) as e:
+                print(f"Error processing location: {e}")
+
+        return queryset
 
 
-class MyBookingsView(ListAPIView):
+class BookingsView(ListAPIView):
     queryset = Booking.objects.all()
     serializer_class = BookingSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, FieldOwnerPermission]
 
 
 class CancelBookingView(DestroyAPIView):
     queryset = Booking.objects.all()
     serializer_class = BookingSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, FieldOwnerPermission]
     lookup_field = 'id'
     lookup_url_kwarg = 'booking_id'
 
-    def destroy(self, request, *args, **kwargs):
-        booking = self.get_object()
-        if booking.date < now().date():
-            return Response({"error": "Past bookings cannot be canceled"}, status=status.HTTP_400_BAD_REQUEST)
-        booking.delete()
-        return Response({"message": "Booking canceled successfully"}, status=status.HTTP_200_OK)
+    # def destroy(self, request, *args, **kwargs):
+    #     booking = self.get_object()
+    #     if booking.date < now().date():
+    #         return Response({"error": "Past bookings cannot be canceled"}, status=status.HTTP_400_BAD_REQUEST)
+    #     booking.delete()
+    #     return Response({"message": "Booking canceled successfully"}, status=status.HTTP_200_OK)
 
 
 class CreateFieldView(ListCreateAPIView):

@@ -2,6 +2,7 @@ from django.contrib.auth.models import User
 from django.db import models
 from django.contrib.gis.db import models as gis_models
 from django.contrib.gis.geos import Point
+from django.contrib.gis.measure import D
 
 
 class FieldOwner(models.Model):
@@ -24,6 +25,9 @@ class FieldOwner(models.Model):
 class GeoManager(models.Manager):
     def nearby(self, latitude, longitude, distance=1000):
         return self.filter(location__distance_lt=(Point(longitude, latitude), D(km=distance)))
+
+    def search(self, query):
+        return self.filter(name__icontains=query)
 
 
 class Field(models.Model):
