@@ -7,3 +7,5 @@ django-filter
 django-rest-auth
 python-decouple
 Pillow
+django-filter
+djangorestframework-simplejwt

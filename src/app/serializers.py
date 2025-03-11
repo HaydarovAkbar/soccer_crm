@@ -14,6 +14,18 @@ class FieldOwnerSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+# class FieldSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = Field
+#         fields = '__all__'
+
+
+# class BookingSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = Booking
+#         fields = '__all__'
+
+
 class FieldSerializer(serializers.ModelSerializer):
     class Meta:
         model = Field
@@ -21,6 +33,8 @@ class FieldSerializer(serializers.ModelSerializer):
 
 
 class BookingSerializer(serializers.ModelSerializer):
+    field_name = serializers.CharField(source="field.name", read_only=True)
+
     class Meta:
         model = Booking
-        fields = '__all__'
+        fields = ["id", "field_name", "date", "start_time", "end_time"]
