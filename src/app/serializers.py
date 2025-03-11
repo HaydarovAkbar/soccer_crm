@@ -29,6 +29,16 @@ class BookingSerializer(serializers.ModelSerializer):
         fields = ["id", "field", "start_time", "end_time"]
 
 
+class CreateBookingSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Booking
+        fields = ["field", "start_time", "end_time"]
+
+    def create(self, validated_data):
+        validated_data["user"] = self.context["request"].user
+        return super().create(validated_data)
+
+
 class CreateFieldSerializer(serializers.ModelSerializer):
     longitude = serializers.FloatField(write_only=True)
     latitude = serializers.FloatField(write_only=True)

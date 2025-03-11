@@ -1,23 +1,20 @@
-from datetime import datetime
 from django.utils.dateparse import parse_datetime
 
 from django.contrib.gis.measure import D
 from django.contrib.gis.db.models.functions import Distance
 from rest_framework.views import APIView
-from rest_framework.generics import ListCreateAPIView, ListAPIView, DestroyAPIView
+from rest_framework.generics import ListCreateAPIView, ListAPIView, DestroyAPIView, RetrieveAPIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
 from .models import Field, Booking
-from .serializers import FieldSerializer, BookingSerializer, CreateFieldSerializer
-from django.utils.timezone import now
-from django_filters.rest_framework import DjangoFilterBackend, OrderingFilter
+from .serializers import FieldSerializer, BookingSerializer, CreateFieldSerializer, CreateBookingSerializer
+from django_filters.rest_framework import DjangoFilterBackend
 from django.contrib.gis.geos import Point
 from .permissions import FieldOwnerPermission, CustomUserPermission
 from .pagination import CustomPagination
-from .filters import FieldFilter
 
 
 def get_tokens_for_user(user):
@@ -96,6 +93,7 @@ class AvailableFieldsView(ListAPIView):
     serializer_class = FieldSerializer
     filter_backends = [DjangoFilterBackend]
     pagination_class = CustomPagination
+    permission_classes = [IsAuthenticated, CustomUserPermission]
 
     def get_queryset(self):
         queryset = Field.objects.all()
@@ -128,6 +126,30 @@ class AvailableFieldsView(ListAPIView):
                 print(f"Error processing location: {e}")
 
         return queryset
+
+
+class RetrieveFieldView(RetrieveAPIView):
+    queryset = Field.objects.all()
+    serializer_class = FieldSerializer
+    permission_classes = [IsAuthenticated, CustomUserPermission]
+    lookup_field = 'id'
+    lookup_url_kwarg = 'field_id'
+
+
+class CreateBookingView(ListCreateAPIView):
+    queryset = Booking.objects.all()
+    serializer_class = BookingSerializer
+    permission_classes = [IsAuthenticated, CustomUserPermission]
+    pagination_class = CustomPagination
+
+    def get_serializer_class(self):
+        if self.request.method == "POST":
+            return CreateBookingSerializer
+        return BookingSerializer
+
+    def get_queryset(self):
+        return Booking.objects.filter(user=self.request.user)
+
 
 
 class BookingsView(ListAPIView):

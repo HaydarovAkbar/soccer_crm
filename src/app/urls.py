@@ -1,6 +1,6 @@
 from django.urls import path
 from .views import LoginView, BookFieldView, AvailableFieldsView, BookingsView, CancelBookingView, LogOutView, \
-    CreateFieldView
+    CreateFieldView, CreateBookingView, RetrieveFieldView
 
 urlpatterns = [
     path('login/', LoginView.as_view(), name='login'),
@@ -11,4 +11,7 @@ urlpatterns = [
     path('bookings/', BookingsView.as_view(), name='bookings'),
     path('cancel-booking/<int:booking_id>/', CancelBookingView.as_view(), name='cancel-booking'),
     path('create-field/', CreateFieldView.as_view(), name='create-field'),
+
+    path('field/<int:field_id>/', RetrieveFieldView.as_view(), name='field'),
+    path('create-booking/', CreateBookingView.as_view(), name='create-booking'),
 ]
