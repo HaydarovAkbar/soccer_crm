@@ -6,3 +6,4 @@ django-cors-headers
 django-filter
 django-rest-auth
 python-decouple
+Pillow

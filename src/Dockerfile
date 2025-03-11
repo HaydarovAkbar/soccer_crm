@@ -8,7 +8,9 @@ RUN apt-get update && apt-get install -y \
     gdal-bin \
     python3-gdal
 
-# Set environment variables
+# Set environment variables for GDAL
+ENV GDAL_LIBRARY_PATH=/usr/lib/libgdal.so
+ENV GEOS_LIBRARY_PATH=/usr/lib/libgeos_c.so
 ENV PYTHONUNBUFFERED 1
 
 # Set the working directory
