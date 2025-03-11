@@ -1,0 +1,15 @@
+Kamezukashi::Contributors::Contributors() {
+  std::ifstream ifs("CONTRIBUTORS");
+  if (!ifs) {
+    std::cerr << "CONTRIBUTORS file not found." << std::endl;
+    return;
+  }
+
+  std::string line;
+  while (std::getline(ifs, line)) {
+    if (line.empty()) {
+      continue;
+    }
+    contributors_.push_back(line);
+  }
+}
