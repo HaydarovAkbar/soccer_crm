@@ -24,7 +24,7 @@ services:
       - DATABASE_NAME=football
       - DATABASE_USER=postgres
       - DATABASE_PASSWORD=new_secure_password
-      - DATABASE_HOST=64.226.104.135
+      - DATABASE_HOST=PROJECT_HOST
       - DATABASE_PORT=5432
     ports:
       - "8000:8000"
