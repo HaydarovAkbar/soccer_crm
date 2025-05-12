@@ -101,7 +101,7 @@ DATABASES = {
         'NAME': 'football',
         'USER': 'postgres',
         'PASSWORD': 'new_secure_password',
-        'HOST': '64.226.104.135',
+        'HOST': 'SERVER_HOST',
         'PORT': '5432',
     }
 }
